@@ -1,3 +1,7 @@
+# About
+
+Example using go-kit
+
 # usersvc
 
 Run the example with the optional port address for the service: 
