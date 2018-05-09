@@ -1,4 +1,4 @@
-package usersvc
+package transport
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/sah4ez/usersvc/pkg/endpoints"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 
 func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
-	e := MakeServerEndpoints(s)
+	e := endpoints.MakeServerEndpoints(s)
 	options := []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(logger),
 		httptransport.ServerErrorEncoder(encodeError),

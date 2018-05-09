@@ -1,9 +1,11 @@
-package usersvc
+package endpoints
 
 import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/sah4ez/usersvc/pkg/auth"
+	"github.com/sah4ez/usersvc/pkg/service"
 	"github.com/satori/go.uuid"
 )
 
@@ -14,7 +16,7 @@ type Endpoints struct {
 	GetUsersEndpoint  endpoint.Endpoint
 }
 
-func MakeServerEndpoints(s Service) Endpoints {
+func MakeServerEndpoints(s service.Service) Endpoints {
 	return Endpoints{
 		PostUserEndpoint:  MakePostUserEndpoint(s),
 		GetUserEndpoint:   MakeGetUserEndpoint(s),
@@ -23,10 +25,10 @@ func MakeServerEndpoints(s Service) Endpoints {
 	}
 }
 
-func MakePostUserEndpoint(s Service) endpoint.Endpoint {
+func MakePostUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postUserRequest)
-		user := User{
+		user := service.User{
 			ID:       uuid.Must(uuid.NewV4(), nil).String(),
 			Name:     req.Name,
 			Email:    req.Email,
@@ -36,7 +38,7 @@ func MakePostUserEndpoint(s Service) endpoint.Endpoint {
 		if e != nil {
 			return postUserResponse{Err: e}, nil
 		}
-		token, e := Generate(user)
+		token, e := auth.Generate(user)
 		if e != nil {
 			return postUserResponse{Err: e}, nil
 		}
@@ -45,7 +47,7 @@ func MakePostUserEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
+func MakeGetUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(getUserRequest)
 		p, e := s.GetUser(ctx, req.ID)
@@ -53,7 +55,7 @@ func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-func MakePatchUserEndpoint(s Service) endpoint.Endpoint {
+func MakePatchUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(patchUserRequest)
 		e := s.PatchUser(ctx, req.ID, req.User)
@@ -61,7 +63,7 @@ func MakePatchUserEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-func MakeGetUsersEndpoint(s Service) endpoint.Endpoint {
+func MakeGetUsersEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		users, e := s.GetUsers(ctx)
 		return getUsersResponse{Err: e, Users: users}, nil
@@ -87,15 +89,15 @@ type getUserRequest struct {
 }
 
 type getUserResponse struct {
-	User User  `json:"user,omitempty"`
-	Err  error `json:"err,omitempty"`
+	User service.User `json:"user,omitempty"`
+	Err  error        `json:"err,omitempty"`
 }
 
 func (r getUserResponse) error() error { return r.Err }
 
 type patchUserRequest struct {
 	ID   string
-	User User
+	User service.User
 }
 
 type patchUserResponse struct {
@@ -108,8 +110,8 @@ func (r patchUserResponse) error() error { return r.Err }
 type getUsersRequest struct{}
 
 type getUsersResponse struct {
-	Err   error  `json:"err,omitempty"`
-	Users []User `json:"users"`
+	Err   error          `json:"err,omitempty"`
+	Users []service.User `json:"users"`
 }
 
 func (r getUsersResponse) error() error { return r.Err }

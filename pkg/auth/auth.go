@@ -1,4 +1,4 @@
-package usersvc
+package auth
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 
 var (
 	mySigningKey               = []byte("SuperSecret")
-	defaultKeyFunc jwt.Keyfunc = func(t *jwt.Token) ([]byte, error) { return mySigningKey, nil }
+	DefaultKeyFunc jwt.Keyfunc = func(t *jwt.Token) ([]byte, error) { return mySigningKey, nil }
 )
 
 var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
