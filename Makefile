@@ -3,7 +3,7 @@ BUILD_PATH=./cmd/usersvc
 GO=CC=gcc vgo
 
 build: clean $(SOURCE)
-	$(GO) build -o ./bin/usersvc $(BUILD_PATH)
+	$(GO) build -o ./bin/usersvc $(BUILD_PATH) 
 
 vendor: go.mod
 	$(GO) vendor

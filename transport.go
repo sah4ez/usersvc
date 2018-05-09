@@ -7,7 +7,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"github.com/gorilla/mux"
 
@@ -17,6 +16,7 @@ import (
 
 var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
+	ErrEmptyToken = errors.New("token is empty")
 )
 
 func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
@@ -61,13 +61,17 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 
 func decodePostUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req postUserRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.User); e != nil {
+	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e
 	}
 	return req, nil
 }
 
 func decodeGetUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	err = Validate(r)
+	if err != nil {
+		return nil, err
+	}
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -77,6 +81,10 @@ func decodeGetUserRequest(_ context.Context, r *http.Request) (request interface
 }
 
 func decodePatchUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	err = Validate(r)
+	if err != nil {
+		return nil, err
+	}
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -98,59 +106,6 @@ func decodeGetUsersRequest(_ context.Context, r *http.Request) (request interfac
 
 type errorer interface {
 	error() error
-}
-
-func encodePostUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("POST").Path("/users/")
-	req.Method, req.URL.Path = "POST", "/users/"
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/users/{id}")
-	r := request.(getUserRequest)
-	userID := url.QueryEscape(r.ID)
-	req.Method, req.URL.Path = "GET", "/users/"+userID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodePatchUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PATCH").Path("/users/{id}")
-	r := request.(patchUserRequest)
-	userID := url.QueryEscape(r.ID)
-	req.Method, req.URL.Path = "PATCH", "/users/"+userID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetUsersRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/users/{id}")
-	//r := request.(getUserRequest)
-	req.Method, req.URL.Path = "GET", "/users/"
-	return encodeRequest(ctx, req, request)
-}
-
-func decodePostUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response postUserResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getUserResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodePatchUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response patchUserResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetUsersResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getUserResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
 }
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {

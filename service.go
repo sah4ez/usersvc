@@ -65,15 +65,12 @@ func (s *inmemService) PatchUser(ctx context.Context, id string, p User) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
-	existing, ok := s.m[id]
+	_, ok := s.m[id]
 	if !ok {
 		return ErrNotFound
 	}
 
-	if p.Name != "" {
-		existing.Name = p.Name
-	}
-	s.m[id] = existing
+	s.m[id] = p
 	return nil
 }
 
